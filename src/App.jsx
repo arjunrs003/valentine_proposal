@@ -44,18 +44,30 @@ function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, []);
 
-  const handleNoHover = () => {
+  const handleNoMove = () => {
     if (phase === PHASES.CHASE) {
-      const xRange = (windowSize.width / 2) - 100;
+      // Calculate boundaries to keep button visible within the card/viewport
+      // We want to avoid the button going too far off or overlapping the "Yes" button too much
+      const padding = 20;
 
-      // Target the top half of the screen more often
-      const minUp = -200;
-      const maxUp = -(windowSize.height / 2) + 100;
+      // Use window bounds but keep it relative to the button's natural position
+      // For mobile, we should be more restrictive with the range
+      const isMobile = windowSize.width < 768;
+      const xRange = isMobile ? (windowSize.width / 2) - 60 : (windowSize.width / 2) - 100;
+      const yRange = isMobile ? (windowSize.height / 2) - 80 : (windowSize.height / 2) - 120;
 
-      const x = Math.random() * (xRange * 2) - xRange;
-      const y = Math.random() * (maxUp - minUp) + minUp;
+      // Generate random positions
+      let newX = (Math.random() * (xRange * 2)) - xRange;
+      // Restrict newY to be strictly negative (upward) relative to initial position
+      let newY = -(Math.random() * yRange);
 
-      setNoPosition({ x, y });
+      // Avoid overlapping too much with the "Yes" button (center-ish)
+      if (Math.abs(newX) < 60 && Math.abs(newY) < 60) {
+        newX += newX > 0 ? 80 : -80;
+        newY -= 80; // Always move further up if too close
+      }
+
+      setNoPosition({ x: newX, y: newY });
 
       const newHoverCount = hoverCount + 1;
       setHoverCount(newHoverCount);
@@ -137,15 +149,16 @@ function App() {
           noPosition={noPosition}
           noText={getNoText()}
           onYesClick={handleYesClick}
-          onNoHover={handleNoHover}
+          onNoHover={handleNoMove}
           onNoClick={handleNoClick}
+          onNoTouch={handleNoMove}
         />
       )}
     </div>
   );
 }
 
-const Proposal = ({ phase, yesScale, noPosition, noText, onYesClick, onNoHover, onNoClick }) => {
+const Proposal = ({ phase, yesScale, noPosition, noText, onYesClick, onNoHover, onNoClick, onNoTouch }) => {
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.8 }}
@@ -158,15 +171,7 @@ const Proposal = ({ phase, yesScale, noPosition, noText, onYesClick, onNoHover, 
       <h1>Will you be my Valentine?</h1>
 
       {/* Clean Flex Layout */}
-      <div style={{
-        display: 'flex',
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        gap: '20px', // Standard gap
-        marginTop: '20px',
-        width: '100%',
-      }} className="button-group">
+      <div className="button-group">
 
         <motion.button
           className="yes-btn"
@@ -187,6 +192,7 @@ const Proposal = ({ phase, yesScale, noPosition, noText, onYesClick, onNoHover, 
           animate={phase === 'CHASE' ? { x: noPosition.x, y: noPosition.y } : { x: 0, y: 0 }}
           transition={{ type: "spring", stiffness: 400, damping: 25 }}
           onMouseEnter={onNoHover}
+          onTouchStart={onNoTouch}
           onClick={onNoClick}
           style={{
             zIndex: 20,
@@ -216,10 +222,7 @@ const Celebration = ({ onReadMore }) => {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="card"
-      style={{
-        maxWidth: '500px',
-      }}
+      className="card celebration-card"
     >
       <div className="gif-container" style={{
         position: 'relative',
@@ -298,10 +301,8 @@ const Letter = () => {
       initial={{ opacity: 0, scale: 0.9 }}
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0 }}
-      className="card"
+      className="card letter-card"
       style={{
-        maxWidth: '600px',
-        padding: '3rem',
         position: 'relative',
         overflow: 'hidden',
         background: 'rgba(255, 255, 255, 0.95)',
