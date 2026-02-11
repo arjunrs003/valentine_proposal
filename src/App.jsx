@@ -206,7 +206,12 @@ const Proposal = ({ phase, yesScale, noPosition, noText, onYesClick, onNoHover, 
   );
 };
 
-const IMAGES = ["/us1.jpeg", "/us2.jpeg", "/us3.jpeg", "/us4.jpeg"];
+const IMAGES = [
+  `${import.meta.env.BASE_URL}us1.jpeg`,
+  `${import.meta.env.BASE_URL}us2.jpeg`,
+  `${import.meta.env.BASE_URL}us3.jpeg`,
+  `${import.meta.env.BASE_URL}us4.jpeg`,
+];
 
 const Celebration = ({ onReadMore }) => {
   const [index, setIndex] = useState(0);
